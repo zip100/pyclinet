@@ -4,7 +4,6 @@ import thread
 import socket
 import json
 import time
-import Camera
 import struct
 
 x = 0
@@ -32,7 +31,13 @@ def worker(connection):
                 x = data[2]
                 y = data[3]
             if (data[4] == 7):
-                print (data[2] - x) * 5, data[3] - y
+                moveX = int((data[2] - x) * 0.54)
+                moveY = int((data[3] - y) / 0.74)
+
+                if (moveY > 100 or moveY < -100 or moveX > 100 or moveX < -100):
+                    print moveX, moveY
+                    x = data[2]
+                    y = data[3]
 
             print "------------------------"
 

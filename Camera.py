@@ -1,12 +1,5 @@
 class Camera:
-    def up(self):
-        return
+    posX, posY = 1500;
 
-    def down(self):
-        return
-
-    def left(self):
-        return
-
-    def right(self):
+    def move(self, x, y):
         return
