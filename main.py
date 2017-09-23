@@ -4,35 +4,43 @@ import thread
 import socket
 import json
 import time
+import Camera
+import struct
+
+x = 0
+y = 0
+
+package = "!BBiiB"
+
 
 def worker(connection):
     while True:
         try:
-            connection.settimeout(60)
+            connection.settimeout(3600)
             datas = connection.recv(8192)
-
-            if(len(datas) < 1):
-                print "close"
+            if (len(datas) < 1):
+                print "[System] Socket Disconnect..."
                 break
 
-            print datas
+            if (len(datas) != struct.calcsize(package)):
+                print "[System] Message Not Valid..."
+                continue;
+
+            data = struct.unpack(package, datas)
+
+            if (data[4] == 3):
+                x = data[2]
+                y = data[3]
+            if (data[4] == 7):
+                print (data[2] - x) * 5, data[3] - y
+
+            print "------------------------"
+
         except socket.timeout:
-            print "time out"
+            print "[System] Socket Timeout..."
             break
         except Exception as error:
-            connection.close()
             print str(error)
-            break
-
-
-        # print "GetMessage "
-        # msg = sock.recv(102400) + "..\r\n"
-        # if not msg:
-        #     sock.close()
-        #     print "Close...."
-        #     break;
-        # print msg
-
 
 
 def listen(port):
@@ -42,11 +50,12 @@ def listen(port):
     host = "192.168.199.137"
     s.bind((host, port))
     s.listen(80)
+    print "[System] Socket Listening..."
 
     while True:
-        print "Connect..\r\n"
         c, addr = s.accept()
-        thread.start_new_thread(worker,(c,))
+        print "[System] Socket Connected..."
+        thread.start_new_thread(worker, (c,))
 
 
 listen(81)
