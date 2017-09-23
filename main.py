@@ -18,13 +18,14 @@ class Camera:
 
     def __init__(self):
         self.ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
-        command = "#9P%(p1)d#15P%(p2)dT100\r\n" % {'p1': self.p1, 'p2': self.p2}
+        command = "#9P%(p1)d#15P%(p2)dT1000\r\n" % {'p1': self.p1, 'p2': self.p2}
         self.send(command)
 
     def send(self, command):
         self.ser.write(command.encode())
 
     def move(self, x, y):
+        x=0-x
         pp1 = self.p1 - x
         if (pp1 > 2400):
             pp1 = 2400
@@ -40,6 +41,7 @@ class Camera:
         self.p2 = pp2
 
         command = "#9P%(p1)d#15P%(p2)dT100\r\n" % {'p1': self.p2, 'p2': self.p1}
+        print command
         self.send(command)
 
         return
@@ -67,10 +69,10 @@ def worker(connection):
                 x = data[2]
                 y = data[3]
             if (data[4] == 7):
-                moveX = int((data[2] - x) * 0.54)
+                moveX = int(data[2] - x * 1)
                 moveY = int((data[3] - y) / 0.54)
 
-                if (moveY > 50 or moveY < -50 or moveX > 50 or moveX < -50):
+                if (moveY > 10 or moveY < -10 or moveX > 10 or moveX < -10):
                     camera.move(moveX, moveY)
                     x = data[2]
                     y = data[3]
@@ -88,7 +90,7 @@ def listen(port):
     s = socket.socket()
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-    host = "192.168.199.137"
+    host = "192.168.199.121"
     s.bind((host, port))
     s.listen(80)
     print "[System] Socket Listening..."
