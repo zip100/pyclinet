@@ -39,7 +39,7 @@ class Camera:
             pp2 = 600
         self.p2 = pp2
 
-        command = "#9P%(p1)d#15P%(p2)dT100\r\n" % {'p1': self.p1, 'p2': self.p2}
+        command = "#9P%(p1)d#15P%(p2)dT100\r\n" % {'p1': self.p2, 'p2': self.p1}
         self.send(command)
 
         return
@@ -70,7 +70,7 @@ def worker(connection):
                 moveX = int((data[2] - x) * 0.54)
                 moveY = int((data[3] - y) / 0.54)
 
-                if (moveY > 100 or moveY < -100 or moveX > 100 or moveX < -100):
+                if (moveY > 50 or moveY < -50 or moveX > 50 or moveX < -50):
                     camera.move(moveX, moveY)
                     x = data[2]
                     y = data[3]
