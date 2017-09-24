@@ -4,6 +4,8 @@ import thread
 import socket
 import struct
 import serial
+import wiringpi as wiringpi
+from time import sleep;
 
 x = 0
 y = 0
@@ -25,7 +27,7 @@ class Camera:
         self.ser.write(command.encode())
 
     def move(self, x, y):
-        x=0-x
+        x = 0 - x
         pp1 = self.p1 - x
         if (pp1 > 2400):
             pp1 = 2400
@@ -45,6 +47,23 @@ class Camera:
         self.send(command)
 
         return
+
+
+class Montor:
+    pin = 0
+
+    def __init__(self, pin):
+        self.pin = pin
+        wiringpi.wiringPiSetupGpio()
+        wiringpi.pinMode(self.pin, 1)
+        wiringpi.digitalWrite(self.pin, 0)
+        wiringpi.pwmSetClock(2)
+        wiringpi.softPwmCreate(self.pin, 0, 200)
+
+        self.set(15)
+
+    def set(self, speed):
+        wiringpi.softPwmWrite(self.pin, int(speed))
 
 
 camera = Camera()
