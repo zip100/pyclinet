@@ -66,8 +66,8 @@ class Montor:
         wiringpi.softPwmWrite(self.pin, int(speed))
 
 
-camera = Camera()
-
+#camera = Camera()
+leftMotor = Montor(18)
 
 def worker(connection):
     while True:
@@ -92,10 +92,15 @@ def worker(connection):
                 moveY = int((data[3] - y) / 0.54)
 
                 if (moveY > 10 or moveY < -10 or moveX > 10 or moveX < -10):
-                    camera.move(moveX, moveY)
+                    #camera.move(moveX, moveY)
                     x = data[2]
                     y = data[3]
                     print "------------------------"
+
+
+            if (data[4] == 1):
+                print data
+
 
 
         except socket.timeout:
