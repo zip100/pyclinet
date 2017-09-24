@@ -98,7 +98,8 @@ def worker(connection):
                     print "------------------------"
 
 
-            if (data[4] == 1):
+            if (data[4] == 1 or data[4] == 6 or data[4] == 5):
+                leftMotor.set(data[0])
                 print data
 
 
