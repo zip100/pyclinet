@@ -17,7 +17,7 @@ package = "!BBiiB"
 steering_engine_device = "/dev/ttyACM0"
 
 # 舵机控制命令模板
-steering_engine_command = "#9P%(p1)d#15P%(p2)dT1000\r\n"
+steering_engine_command = "#9P%(p1)d#10P%(p2)dT1000\r\n"
 
 # 监听端口
 listen_port = 1500
