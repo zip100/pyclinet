@@ -12,7 +12,6 @@ y = 0
 
 package = "!BBiiB"
 
-
 class Camera:
     p1 = 1500
     p2 = 1500
@@ -71,8 +70,10 @@ class Montor:
         wiringpi.softPwmWrite(self.pin, int(speed))
 
 
-#camera = Camera()
+camera = Camera()
 leftMotor = Montor(18)
+rightMotor = Montor(19)
+
 
 def worker(connection):
     while True:
@@ -97,14 +98,14 @@ def worker(connection):
                 moveY = int((data[3] - y) / 0.54)
 
                 if (moveY > 10 or moveY < -10 or moveX > 10 or moveX < -10):
-                    #camera.move(moveX, moveY)
+                    camera.move(moveX, moveY)
                     x = data[2]
                     y = data[3]
                     print "------------------------"
 
-
             if (data[4] == 1 or data[4] == 6 or data[4] == 5):
                 leftMotor.set(data[0])
+                rightMotor.set(data[1])
                 print data
 
 
@@ -114,7 +115,6 @@ def worker(connection):
             break
         except Exception as error:
             print str(error)
-
 
 def listen(port):
     s = socket.socket()
