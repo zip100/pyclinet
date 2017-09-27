@@ -20,6 +20,11 @@ class Camera:
 
     def __init__(self):
         self.ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
+
+        command = "#9P%(p1)d#15P%(p2)dT1000\r\n" % {'p1': 2400, 'p2': 600}
+        self.send(command)
+        sleep(2)
+
         command = "#9P%(p1)d#15P%(p2)dT1000\r\n" % {'p1': self.p1, 'p2': self.p2}
         self.send(command)
 
