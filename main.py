@@ -10,7 +10,21 @@ from time import sleep;
 x = 0
 y = 0
 
+# 二进制数据包格式
 package = "!BBiiB"
+
+# 16路舵机控制板物理设备
+steering_engine_device = "/dev/ttyACM0"
+
+# 舵机控制命令模板
+steering_engine_command = "#9P%(p1)d#15P%(p2)dT1000\r\n"
+
+# 监听端口
+listen_port = 1500
+
+# 监听地址
+listen_address = "192.168.199.121"
+
 
 class Camera:
     p1 = 1500
@@ -18,13 +32,15 @@ class Camera:
     ser = 0;
 
     def __init__(self):
-        self.ser = serial.Serial('/dev/ttyACM0', 9600, timeout=1)
+        self.ser = serial.Serial(steering_engine_device, 9600, timeout=1)
 
-        command = "#9P%(p1)d#15P%(p2)dT1000\r\n" % {'p1': 2400, 'p2': 600}
+        # 初始化云台动作
+        command = steering_engine_command % {'p1': 2400, 'p2': 600}
         self.send(command)
         sleep(2)
 
-        command = "#9P%(p1)d#15P%(p2)dT1000\r\n" % {'p1': self.p1, 'p2': self.p2}
+        # 云台移动到默认位置
+        command = steering_engine_command % {'p1': self.p1, 'p2': self.p2}
         self.send(command)
 
     def send(self, command):
@@ -32,6 +48,8 @@ class Camera:
 
     def move(self, x, y):
         x = 0 - x
+
+        # 舵机位置限定（上下左右各预留100防止碰撞）
         pp1 = self.p1 - x
         if (pp1 > 2400):
             pp1 = 2400
@@ -46,7 +64,7 @@ class Camera:
             pp2 = 600
         self.p2 = pp2
 
-        command = "#9P%(p1)d#15P%(p2)dT100\r\n" % {'p1': self.p2, 'p2': self.p1}
+        command = steering_engine_command % {'p1': self.p2, 'p2': self.p1}
         print command
         self.send(command)
 
@@ -64,17 +82,23 @@ class Montor:
         wiringpi.pwmSetClock(2)
         wiringpi.softPwmCreate(self.pin, 0, 200)
 
+        # 马达电调油门中间位置
         self.set(15)
 
     def set(self, speed):
         wiringpi.softPwmWrite(self.pin, int(speed))
 
 
+# 实例化摄像头云台
 camera = Camera()
+
+# 实例化左马达对象
 leftMotor = Montor(18)
+
+# 实例化右马达对象
 rightMotor = Montor(19)
 
-
+# 工作线程
 def worker(connection):
     while True:
         try:
@@ -108,27 +132,29 @@ def worker(connection):
                 rightMotor.set(data[1])
                 print data
 
-
-
         except socket.timeout:
             print "[System] Socket Timeout..."
             break
         except Exception as error:
             print str(error)
 
-def listen(port):
+
+def listen(address,port):
     s = socket.socket()
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-    host = "192.168.199.121"
-    s.bind((host, port))
+    # 绑定地址和端口
+    s.bind((address, port))
+
+    # 最大排队数量
     s.listen(80)
     print "[System] Socket Listening..."
 
     while True:
         c, addr = s.accept()
         print "[System] Socket Connected..."
+        # 给新的连接启动线程
         thread.start_new_thread(worker, (c,))
 
-
-listen(81)
+# 程序入口
+listen(listen_address, listen_port)
