@@ -25,6 +25,12 @@ listen_port = 1500
 # 监听地址
 listen_address = "192.168.199.121"
 
+# 左边马达 GPIO 编号
+left_motor_pin = 18
+
+# 右边马达 GPIO 编号
+right_motor_pin = 18
+
 
 class Camera:
     p1 = 1500
@@ -93,44 +99,71 @@ class Montor:
 camera = Camera()
 
 # 实例化左马达对象
-leftMotor = Montor(18)
+leftMotor = Montor(left_motor_pin)
 
 # 实例化右马达对象
-rightMotor = Montor(19)
+rightMotor = Montor(right_motor_pin)
+
+
+# 解包函数
+def unpck(data, format):
+    data_len = len(data)
+    per_len = struct.calcsize(format)
+    pos = 0
+    end = per_len
+    bag = {'list': [], 'foot': ''}
+
+    if (data_len < per_len):
+        bag['foot'] = data
+        return bag
+
+    while (pos < data_len):
+        if (end - pos < per_len):
+            bag['foot'] = data[pos:end]
+        else:
+            bag['list'].append(struct.unpack(package, "".join(data[pos:end])))
+        pos += per_len
+        end += per_len
+        if (end > data_len):
+            end = data_len
+    return bag
+
 
 # 工作线程
 def worker(connection):
+    head = ""
+    connection.settimeout(3600)
     while True:
         try:
-            connection.settimeout(3600)
-            datas = connection.recv(8192)
-            if (len(datas) < 1):
+            raw = connection.recv(8192)
+            if (len(raw) < 1):
                 print "[System] Socket Disconnect..."
                 break
 
-            if (len(datas) != struct.calcsize(package)):
-                print "[System] Message Not Valid..."
-                continue;
+            if (len(raw) % struct.calcsize(package) == 0):
+                ret = unpck(raw, package)
+            else:
+                ret = unpck(head + raw, package)
 
-            data = struct.unpack(package, datas)
-
-            if (data[4] == 3):
-                x = data[2]
-                y = data[3]
-            if (data[4] == 7):
-                moveX = int(data[2] - x * 1)
-                moveY = int((data[3] - y) / 0.54)
-
-                if (moveY > 10 or moveY < -10 or moveX > 10 or moveX < -10):
-                    camera.move(moveX, moveY)
+            head = ret['foot']
+            for data in ret['list']:
+                print data
+                if (data[4] == 3):
                     x = data[2]
                     y = data[3]
-                    print "------------------------"
+                if (data[4] == 7):
+                    moveX = int(data[2] - x * 1)
+                    moveY = int((data[3] - y) / 0.54)
 
-            if (data[4] == 1 or data[4] == 6 or data[4] == 5):
-                leftMotor.set(data[0])
-                rightMotor.set(data[1])
-                print data
+                    if (moveY > 10 or moveY < -10 or moveX > 10 or moveX < -10):
+                        camera.move(moveX, moveY)
+                        x = data[2]
+                        y = data[3]
+                        print "Camer Move:", moveX, moveY
+                if (data[4] == 1 or data[4] == 6 or data[4] == 5):
+                    leftMotor.set(data[0])
+                    rightMotor.set(data[1])
+                    print "Motor Set:", data[0], data[1]
 
         except socket.timeout:
             print "[System] Socket Timeout..."
@@ -139,7 +172,7 @@ def worker(connection):
             print str(error)
 
 
-def listen(address,port):
+def listen(address, port):
     s = socket.socket()
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
@@ -155,6 +188,7 @@ def listen(address,port):
         print "[System] Socket Connected..."
         # 给新的连接启动线程
         thread.start_new_thread(worker, (c,))
+
 
 # 程序入口
 listen(listen_address, listen_port)
